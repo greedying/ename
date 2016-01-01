@@ -1,0 +1,5 @@
+/tmp
+/vendor
+*.swp
+php_errors.log
+config.php

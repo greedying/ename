@@ -1,0 +1,9 @@
+/**
+将此文件重命名为config.php
+**/
+<?php 
+return [
+	'username'		=> "123456",
+    'password'		=> "password",
+	'protectAnswer' => "answer",
+];

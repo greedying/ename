@@ -1,0 +1,20 @@
+{
+	"name": "greedying/ename",
+	"description": "易名域名项目",
+	"license": "proprietary",
+	"require": {
+		"php": ">=5.3.0",
+		"shark/simple_html_dom": "dev-master"
+	},
+	"autoload": {
+		"psr-4": {
+			"Greedying\\Ename\\": "src/"
+		}
+	},
+	"repositories": [
+		{"type": "composer", "url": "http://pkg.phpcomposer.com/repo/packagist/"},
+		{"packagist": false}
+	],
+	"minimum-stability": "stable"
+}
+
