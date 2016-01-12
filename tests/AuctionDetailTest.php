@@ -53,7 +53,7 @@ class AuctionDetailTest extends PHPUnit_Framework_TestCase
 		$this->assertFalse($this->auction_not_exist->getEndTime());
 		$this->assertEquals('2015-10-06 17:10', $this->auction_ing->getEndTime());
 		$this->assertEquals('2015-10-06 12:21', $this->auction_done->getEndTime());
-		$this->assertEquals('2016-01-04 22:59', $this->oneprice_ing->getEndTime());
+		$this->assertEquals('2100-01-04 22:59', $this->oneprice_ing->getEndTime());
 	}
 
 	public function testGetBidCount()
