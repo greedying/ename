@@ -107,7 +107,7 @@ class User extends EnameBase {
 
 	/**
 	 * 获取等待上架域名页面信息
-	 * 除了域名信息外，主要就是ename_csrf
+	 * 除了域名信息外，主要就是ci_csrf_token
 	 * $transType 交易类型 0 全部 1竞价 4一口价
 	 * 注意： 在/fabu/getPreTradeList上4是 一口价，但是发布的时候,却是3代表一口价 。。。。。
 	 * **/
@@ -119,12 +119,12 @@ class User extends EnameBase {
 		}
 		$return = $this->curlRequest($url);
 		$html = str_get_html($return);
-		$ename_csrf = $html->find('input[name=ename_csrf]', 0)->value;
+		$ci_csrf_token = $html->find('input[name=ci_csrf_token]', 0)->value;
 
 		if (strpos($return, "找不到相关记录") !== false) {
 			return [
 				'domainsArray'		=> [],
-				'ename_csrf'		=> $ename_csrf,
+				'ci_csrf_token'		=> $ci_csrf_token,
 				];
 		} else {
 			$domains = [];
@@ -139,7 +139,7 @@ class User extends EnameBase {
 			}
 			return [
 				'domainsArray'		=> $domains,
-				'ename_csrf'		=> $ename_csrf,
+				'ci_csrf_token'		=> $ci_csrf_token,
 				];
 		}
 	}
@@ -212,7 +212,7 @@ class User extends EnameBase {
 			$data['opPassword'] = $this->password;
 
 			$data['type'] = $fabuType;
-			$data['ename_csrf'] = $preTradeInfo['ename_csrf'];
+			$data['ci_csrf_token'] = $preTradeInfo['ci_csrf_token'];
 
 			$secondUrl = "http://auction.ename.com/fabu/second";
 			$return = $this->curlRequest($secondUrl, $data);

@@ -72,7 +72,7 @@ class AuctionList extends EnameBase {
 	 ***/
 	protected $domaintlds   = []; 
 
-	private $enameCsrf = '';
+	private $ciCsrf = '';
 	private $total = 0;
 	private $paramsChanged = true;
 
@@ -156,7 +156,7 @@ class AuctionList extends EnameBase {
 		$number = $html->find('.page_hd .c_orange', 0)->plaintext;
 		$number = trim($number, ')( ');
 		$this->total = $number;
-		$this->enameCsrf = $html->find('input[name=ename_csrf]', 0)->value;
+		$this->ciCsrf = $html->find('input[name=ci_csrf_token]', 0)->value;
 		$this->paramsChanged = false;
 		return $this;
 	}
@@ -189,7 +189,7 @@ class AuctionList extends EnameBase {
 	{
 		$this->checkParamsChanged();
 		$params = $this->getParams();
-		$params['ename_csrf'] = $this->enameCsrf;
+		$params['ci_csrf_token'] = $this->ciCsrf;
 		$params['ajax']		  = 1;
 		$params['page']		  = $page;
 		$params['per_page']	  = $page * $this->numPerPage;
