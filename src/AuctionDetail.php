@@ -182,6 +182,52 @@ class AuctionDetail extends EnameBase {
 		return false;
 	}
 
+    public function getAuditListId() 
+    {
+        if (empty($this->audit_list_id)) {
+            $id_html = $this->html->find('input[name=id]', 0);
+            if ($id_html) {
+                $this->audit_list_id  = trim($id_html->value);
+            }
+        }
+        return $this->audit_list_id;
+    }
+
+    public function getDesc()
+    {
+        $desc_html = $this->html->find('#domainTrans table tbody tr', 0)->find('td' ,1);
+		if ($desc_html) {
+            // 返回innertext中span元素出现之前的部分，并且去除前后空格
+            return trim(strstr($desc_html->innertext, "<span", true));
+        }
+
+		return false;
+    }
+
+    public function getDomainName()
+    {
+        //顶部当前位置获取
+        $domain_html = $this->html->find('div.crumb', 0)->find('span' ,1);
+		if ($domain_html) {
+            // 返回innertext中span元素出现之前的部分，并且去除前后空格
+            return trim($domain_html->plaintext);
+        }
+
+		return false;
+    }
+
+    public function getSellerId()
+    {
+        $shop_html = $this->html->find('.bid_shop h3 a', 0);
+        if ($shop_html) {
+            $href = $shop_html->href;
+            $domain = substr($href, 7);//去掉开头http://
+            return strstr($domain, '.', true); //第一个点出现前的部分
+        }
+
+        return 0;// 没有开启店铺的情况，当前页无法获得id
+    }
+
 	function __destruct()
 	{
 		$this->html->clear();

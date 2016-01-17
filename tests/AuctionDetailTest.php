@@ -76,4 +76,35 @@ class AuctionDetailTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals(36, $this->auction_done->getPrice());
 		$this->assertEquals(65, $this->oneprice_ing->getPrice());
 	}
+
+    public function testGetAuditListId()
+    {
+		$this->assertEquals('62986869', $this->auction_ing->getAuditListId());
+		$this->assertEquals('62910676', $this->auction_done->getAuditListId());
+        $this->assertEquals('62993714', $this->oneprice_ing->getAuditListId());
+        $this->assertEquals('63023365', $this->oneprice_done->getAuditListId());
+    }
+
+    public function testGetDesc()
+    {
+		$this->assertEquals('8*AA**类型，价格飙升中。。。', $this->auction_ing->getDesc());
+		$this->assertEquals('蒡杓-植物药材名称。', $this->auction_done->getDesc());
+        $this->assertEquals('', $this->oneprice_ing->getDesc());
+        $this->assertEquals('商务 食物 事务 实务 生物 饰物 税务', $this->oneprice_done->getDesc());
+    }
+
+    public function testGetDomainName()
+    {
+		$this->assertEquals('827702.com', $this->auction_ing->getDomainName());
+		$this->assertEquals('pangshao.cn', $this->auction_done->getDomainName());
+        $this->assertEquals('xhdu.cn', $this->oneprice_ing->getDomainName());
+        $this->assertEquals('swid.cn', $this->oneprice_done->getDomainName());
+    }
+    public function testGetSellerId()
+    {
+		$this->assertEquals('138039', $this->auction_ing->getSellerId());
+		$this->assertEquals('952525', $this->auction_done->getSellerId());
+        $this->assertEquals('926826', $this->oneprice_ing->getSellerId());
+        $this->assertEquals('594788', $this->oneprice_done->getSellerId());
+    }
 }
