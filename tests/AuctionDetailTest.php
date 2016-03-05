@@ -14,20 +14,40 @@ class AuctionDetailTest extends PHPUnit_Framework_TestCase
 	{
 		$dir = __DIR__ . "/../insource/";
 
-		$this->auction_not_exist = new AuctionDetail($dir . 'auction_not_exist.html');
-		$this->auction_ing = new AuctionDetail($dir . 'auction_ing.html');
-		$this->auction_done = new AuctionDetail($dir . 'auction_done.html');
-		$this->oneprice_ing = new AuctionDetail($dir . 'auction_oneprice_ing.html');
-		$this->oneprice_done = new AuctionDetail($dir . 'auction_oneprice_done.html');
+        $info = [
+            'file'      => $dir . 'auction_not_exist.html',
+            'transtype' => false,
+            ];
+		$this->auction_not_exist = new AuctionDetail($info);
+        $info = [
+            'file'      => $dir . 'auction_ing.html',
+            'transtype' => AuctionDetail::TYPE_BIDDING,
+            ];
+		$this->auction_ing = new AuctionDetail($info);
+        $info = [
+            'file'      => $dir . 'auction_done.html',
+            'transtype' => AuctionDetail::TYPE_BIDDING,
+            ];
+		$this->auction_done = new AuctionDetail($info);
+        $info = [
+            'file'      => $dir . 'auction_oneprice_ing.html',
+            'transtype' => AuctionDetail::TYPE_BUYNOW,
+            ];
+		$this->oneprice_ing = new AuctionDetail($info);
+        $info = [
+            'file'      => $dir . 'auction_oneprice_done.html',
+            'transtype' => AuctionDetail::TYPE_BUYNOW,
+            ];
+		$this->oneprice_done = new AuctionDetail($info);
 	}
 
     public function testGetTransType()
     {
 		$this->assertFalse($this->auction_not_exist->getTransType());
-		$this->assertEquals(1, $this->auction_ing->getTransType());
-		$this->assertEquals(1, $this->auction_done->getTransType());
-		$this->assertEquals(4, $this->oneprice_ing->getTransType());
-		$this->assertEquals(4, $this->oneprice_done->getTransType());
+		$this->assertEquals(4, $this->auction_ing->getTransType());
+		$this->assertEquals(4, $this->auction_done->getTransType());
+		$this->assertEquals(1, $this->oneprice_ing->getTransType());
+		$this->assertEquals(1, $this->oneprice_done->getTransType());
 	}
 
 
@@ -36,75 +56,72 @@ class AuctionDetailTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals(-1, $this->auction_not_exist->getStatus());
 		$this->assertEquals(0, $this->auction_ing->getStatus());
 		$this->assertEquals(1, $this->auction_done->getStatus());
-		$this->assertEquals(0, $this->oneprice_ing->getStatus());
-		$this->assertEquals(1, $this->oneprice_done->getStatus());
+        $this->assertEquals(0, $this->oneprice_ing->getStatus());
+        $this->assertEquals(1, $this->oneprice_done->getStatus());
 	}
 
 	public function testGetStartTime()
 	{
 		$this->assertFalse($this->auction_not_exist->getStartTime());
-		$this->assertEquals('2015-10-05 23:08', $this->auction_ing->getStartTime());
-		$this->assertEquals('2015-10-05 08:58', $this->auction_done->getStartTime());
-		$this->assertEquals('2015-10-06 00:13', $this->oneprice_ing->getStartTime());
+		$this->assertEquals('2016-03-04 00:30:03', $this->auction_ing->getStartTime());
+		$this->assertEquals('2016-03-04 19:01:15', $this->auction_done->getStartTime());
+		$this->assertEquals('2015-12-29 16:26:43', $this->oneprice_ing->getStartTime());
 	}
 
 	public function testGetEndTime()
 	{
 		$this->assertFalse($this->auction_not_exist->getEndTime());
-		$this->assertEquals('2015-10-06 17:10', $this->auction_ing->getEndTime());
-		$this->assertEquals('2015-10-06 12:21', $this->auction_done->getEndTime());
-		$this->assertEquals('2100-01-04 22:59', $this->oneprice_ing->getEndTime());
+		$this->assertEquals('2016-03-05 17:40:00', $this->auction_ing->getEndTime());
+		$this->assertEquals('2016-03-05 15:48:00', $this->auction_done->getEndTime());
+		$this->assertEquals('2016-03-28 21:29:52', $this->oneprice_ing->getEndTime());
 	}
 
 	public function testGetBidCount()
 	{
-		$this->assertEquals(18, $this->auction_ing->getBidCount());
-		$this->assertEquals(17, $this->auction_done->getBidCount());
+		$this->assertEquals(9, $this->auction_ing->getBidCount());
+		$this->assertEquals(0, $this->auction_done->getBidCount());
 		$this->assertEquals(0, $this->oneprice_ing->getBidCount());
 	}
 
 	public function testGetAskingPrice()
 	{
 		$this->assertEquals(1, $this->auction_ing->getAskingPrice());
-		$this->assertEquals(1, $this->auction_done->getAskingPrice());
-		$this->assertEquals(65, $this->oneprice_ing->getAskingPrice());
+		$this->assertEquals(50000, $this->auction_done->getAskingPrice());
+		$this->assertEquals(200000, $this->oneprice_ing->getAskingPrice());
 	}
 
 	public function testGetPrice()
 	{
-		$this->assertEquals(50, $this->auction_ing->getPrice());
-		$this->assertEquals(36, $this->auction_done->getPrice());
-		$this->assertEquals(65, $this->oneprice_ing->getPrice());
+		$this->assertEquals(13, $this->auction_ing->getPrice());
+		$this->assertEquals(50000, $this->auction_done->getPrice());
+		$this->assertEquals(200000, $this->oneprice_ing->getPrice());
 	}
 
-    public function testGetAuditListId()
+    public function testGetId()
     {
-		$this->assertEquals('62986869', $this->auction_ing->getAuditListId());
-		$this->assertEquals('62910676', $this->auction_done->getAuditListId());
-        $this->assertEquals('62993714', $this->oneprice_ing->getAuditListId());
-        $this->assertEquals('63023365', $this->oneprice_done->getAuditListId());
+        $this->assertEquals('aggfxk9ddhbamm4h', $this->auction_ing->getId());
+        $this->assertEquals('a0hf8ocm5j176946', $this->auction_done->getId());
+        $this->assertEquals('9cgo28s1dad6t28n', $this->oneprice_ing->getId());
     }
 
     public function testGetDesc()
     {
-		$this->assertEquals('8*AA**类型，价格飙升中。。。', $this->auction_ing->getDesc());
-		$this->assertEquals('蒡杓-植物药材名称。', $this->auction_done->getDesc());
-        $this->assertEquals('', $this->oneprice_ing->getDesc());
-        $this->assertEquals('商务 食物 事务 实务 生物 饰物 税务', $this->oneprice_done->getDesc());
+		$this->assertEquals('易快运，壹块云，物流快递商号', $this->auction_ing->getDesc());
+		$this->assertEquals('贷去啊 参考去啊旅游网qua.com 贷款服务中心', $this->auction_done->getDesc());
+        $this->assertEquals('悦动圈，著名运动app', $this->oneprice_ing->getDesc());
     }
 
     public function testGetDomainName()
     {
-		$this->assertEquals('827702.com', $this->auction_ing->getDomainName());
-		$this->assertEquals('pangshao.cn', $this->auction_done->getDomainName());
-        $this->assertEquals('xhdu.cn', $this->oneprice_ing->getDomainName());
-        $this->assertEquals('swid.cn', $this->oneprice_done->getDomainName());
+		$this->assertEquals('yikuaiyun.cn', $this->auction_ing->getDomainName());
+		$this->assertEquals('daiqua.com', $this->auction_done->getDomainName());
+        $this->assertEquals('yuedongquan.com', $this->oneprice_ing->getDomainName());
     }
+
     public function testGetSellerId()
     {
-		$this->assertEquals('138039', $this->auction_ing->getSellerId());
-		$this->assertEquals('952525', $this->auction_done->getSellerId());
-        $this->assertEquals('926826', $this->oneprice_ing->getSellerId());
-        $this->assertEquals('594788', $this->oneprice_done->getSellerId());
+		$this->assertEquals('977506', $this->auction_ing->getSellerId());
+		$this->assertEquals('585168', $this->auction_done->getSellerId());
+        $this->assertEquals('941236', $this->oneprice_ing->getSellerId());
     }
 }

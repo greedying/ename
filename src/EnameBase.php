@@ -2,6 +2,9 @@
 namespace Greedying\Ename;
 
 class EnameBase {
+    const TYPE_BIDDING = 4;
+    const TYPE_BUYNOW = 1;
+
 	/**
 	 * cookie_file
 	 * 如果需要存储cookie，则设置此项

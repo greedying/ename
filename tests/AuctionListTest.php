@@ -9,33 +9,34 @@ class AuctionListTest extends PHPUnit_Framework_TestCase
     {
 		$auction = new AuctionList();
 
-		$url = 'http://auction.ename.com/auction/domainlist';
+		$url = 'http://auction.ename.com/tao';
 
 		/**测试用例先空一下
 		 * **/
 		$this->assertEquals($url, $auction->getCompleteUrl());
 
 		$auction->setTranstype(1);
-		$url = 'http://auction.ename.com/auction/domainlist?transtype=1';
+		$url = 'http://auction.ename.com/tao/buynow?transtype=1';
 		$this->assertEquals($url, $auction->getCompleteUrl());
 
 
 		$auction->setDomaingroup(2);
-		$url = 'http://auction.ename.com/auction/domainlist?domaingroup=2&transtype=1';
+		$url = 'http://auction.ename.com/tao/buynow?domaingroup=2&transtype=1';
 		$this->assertEquals($url, $auction->getCompleteUrl());
 
 		$auction->setDomaintlds([2]);
-		$url = 'http://auction.ename.com/auction/domainlist?domaingroup=2&domaintld%5B0%5D=2&transtype=1';
+		$url = 'http://auction.ename.com/tao/buynow?domaingroup=2&domaintld%5B0%5D=2&transtype=1';
 		$this->assertEquals($url, $auction->getCompleteUrl());
 
 		$auction->setDomaintlds([1, 2]);
-		$url = 'http://auction.ename.com/auction/domainlist?domaingroup=2&domaintld%5B0%5D=1&domaintld%5B1%5D=2&transtype=1';
+		$url = 'http://auction.ename.com/tao/buynow?domaingroup=2&domaintld%5B0%5D=1&domaintld%5B1%5D=2&transtype=1';
 		$this->assertEquals($url, $auction->getCompleteUrl());
 	}
 
 	public function testGetTotalAndTotalPage() 
 	{
 		$auction = new AuctionList();
+		$auction->setTranstype(1);
 
 		$page1 = $auction->getTotalPage();
 		$this->assertEquals($page1, intval($page1));
@@ -59,12 +60,9 @@ class AuctionListTest extends PHPUnit_Framework_TestCase
 		$auction->setTranstype(1);
 		$data = $auction->getData(1);
 		$this->assertArrayHasKey('data', $data);
-		$this->assertArrayHasKey('levelConf', $data);
 		$this->assertArrayHasKey('more', $data);
-		$this->assertArrayHasKey('topDomainList', $data);
-		$this->assertArrayHasKey('topDomainName', $data);
 		$this->assertArrayHasKey('transtype', $data);
-		$this->assertArrayHasKey('type', $data);
+		$this->assertArrayHasKey('is_index', $data);
 	}
 
 	public function testGetAuctions() 
@@ -75,21 +73,19 @@ class AuctionListTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue(is_array($data));
 
 		$auction = $data[0];
-		$this->assertArrayHasKey('AuditListId', $auction);
-		$this->assertArrayHasKey('IsDomainInEname', $auction);
-		$this->assertArrayHasKey('AskingPrice', $auction);
-		$this->assertArrayHasKey('FinishDate', $auction);
-		$this->assertArrayHasKey('SimpleDec', $auction);
-		$this->assertArrayHasKey('BidPrice', $auction);
-		$this->assertArrayHasKey('TransType', $auction);
+		$this->assertArrayHasKey('sell_id', $auction);
+		$this->assertArrayHasKey('transtype', $auction);
+		$this->assertArrayHasKey('price', $auction);
+		$this->assertArrayHasKey('description', $auction);
+		$this->assertArrayHasKey('domain_name', $auction);
+		$this->assertArrayHasKey('bid_count', $auction);
+		$this->assertArrayHasKey('trade_number', $auction);
 
-		/**
-		 * 如果数据为空，那么返回空数组
-		 * 1000000位一个不存在的页码
-		 **/
+		 // 如果数据为空，那么返回空数组
+		 // 1000000位一个不存在的页码
+		 //
 		$data = $auctionObj->getAuctions(10000000);
 		$this->assertEquals([], $data);
 	}
-
 
 }

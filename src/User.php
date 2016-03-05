@@ -108,23 +108,19 @@ class User extends EnameBase {
 	/**
 	 * 获取等待上架域名页面信息
 	 * 除了域名信息外，主要就是ci_csrf_token
-	 * $transType 交易类型 0 全部 1竞价 4一口价
-	 * 注意： 在/fabu/getPreTradeList上4是 一口价，但是发布的时候,却是3代表一口价 。。。。。
-	 * **/
+	 * $transType 交易类型 0 全部 1一口价 4竞价
+	 */
 	protected function getPreTradeInfo($transType = 0) 
 	{
-		$url = "http://auction.ename.com/fabu/getPreTradeList";
+		$url = "http://auction.ename.com/publish/waitsale";
 		if ($transType) {
 			$url .= "?transType=$transType";
 		}
 		$return = $this->curlRequest($url);
 		$html = str_get_html($return);
-		$ci_csrf_token = $html->find('input[name=ci_csrf_token]', 0)->value;
-
 		if (strpos($return, "找不到相关记录") !== false) {
 			return [
 				'domainsArray'		=> [],
-				'ci_csrf_token'		=> $ci_csrf_token,
 				];
 		} else {
 			$domains = [];
@@ -137,10 +133,9 @@ class User extends EnameBase {
 				$domain = trim($tds[1]->plaintext);
 				$domain && $domains[] = strtolower($domain);
 			}
-			return [
-				'domainsArray'		=> $domains,
-				'ci_csrf_token'		=> $ci_csrf_token,
-				];
+            return [
+                'domainsArray'		=> $domains,
+                ];
 		}
 	}
 
@@ -159,78 +154,74 @@ class User extends EnameBase {
 	 **/
 	function batchFabuPreTradeList() 
 	{
-		foreach([1,4] as $transType) {
-			$preTradeInfo	= $this->getPreTradeInfo($transType);
+		foreach([1, 4] as $transType) {
+			$preTradeInfo = $this->getPreTradeInfo($transType);
 
 			if (empty($preTradeInfo['domainsArray'])) {
 				if ($transType == 1 ) {
-					$this->log("域名上架：无待上架竞价域名");
-				} else if ($transType == 4 ) {
 					$this->log("域名上架：无待上架一口价域名");
+				} else if ($transType == 4 ) {
+					$this->log("域名上架：无待上架竞价域名");
 				}
 				continue;
 			}
+			$preTradeInfo['type'] = $transType;
+            $preTradeInfo['domainsText'] = implode("\n", $preTradeInfo['domainsArray']);
 
-			/** 查询的时候，1竞价 4一口价，但是发布的时候，1竞价，一口价变成了3  **/
-			$fabuType = $transType;
-			if ($transType == 4) {
-				$fabuType = 3;
-			}
-
-
-			$preTradeInfo['type']	= $fabuType;//1代表竞价，暂时只考虑这种情况
 
 			/**
 			 * 第一步，编辑页面
 			 **/
-			$firstUrl = 'http://auction.ename.com/fabu/first';
-			$return = $this->curlRequest($firstUrl, $preTradeInfo, [CURLOPT_REFERER => "http://auction.ename.com/fabu/getPreTradeLis"]);
+			$firstUrl = 'http://auction.ename.com/publish/first';
+			$return = $this->curlRequest($firstUrl, $preTradeInfo, [CURLOPT_REFERER => "http://auction.ename.com/publish/waitsale"]);
 
 			/***
 			 * 第二步，提交
 			 */
 			$html = str_get_html($return);
-			$data = ['domains' => $preTradeInfo['domainsArray']];
+            $data = [
+                'domains' => $preTradeInfo['domainsArray'],
+                'domain'    => [],
+                ];
 			foreach($preTradeInfo['domainsArray'] as $domain) {
-				$prefix = str_replace('.', '_', $domain);
-				$tr = $html->find("#$prefix", 0);
+                $domain_str = str_replace('.', '_', $domain);
+				$tr = $html->find("#{$domain_str}", 0);
 				if ($tr) {
 					//之所以对tr做判断，是防止域名不会出现在交易列表中，比如域名即将过期，或者处于询价交易中等等
-					$data[$prefix.'_md5'] = $tr->find("input[name={$prefix}_md5]", 0)->value;
-					$data[$prefix.'_transdate'] = '1';//有效期一天
-					$data[$prefix.'_transtime'] = '21';//晚上九点到十点之间
-					$data[$prefix.'_transmoney'] = $tr->find("input[name={$prefix}_transmoney]", 0)->value;
-					$data[$prefix.'_simpledec'] = $tr->find("input[name={$prefix}_simpledec]", 0)->value;
+                    $data['domain'][$domain]['day'] = 1; //有效期一天
+                    $data['domain'][$domain]['hour'] = 21; //21点时间段结束
+					$data['domain'][$domain]['price'] = $tr->find("input[name='domain[{$domain}][price]']", 0)->value;
+					$data['domain'][$domain]['description'] = $tr->find("input[name='domain[{$domain}][description]']", 0)->value;
 				}
 			}
+            if (count($data['domain']) <= 0) {
+                continue; ///有待上架域名，但是都不能发布
+            }
 
-			$data['domain_ename'] = 1; //应该是在ename注册的域名吧
 			$data['transpoundage'] = 2; //不可提现预付款
 			$data['makesure'] = 'on';
 			$data['opProtectId'] = $html->find("#opProtectId", 0)->value;
 			$data['opAnswer'] = $this->protectAnswer;
 			$data['opPassword'] = $this->password;
-
-			$data['type'] = $fabuType;
-			$data['ci_csrf_token'] = $preTradeInfo['ci_csrf_token'];
-
-			$secondUrl = "http://auction.ename.com/fabu/second";
+			$data['type'] = $transType;
+            
+			$secondUrl = "http://auction.ename.com/publish/second";
 			$return = $this->curlRequest($secondUrl, $data);
 
 			/**获取成功上架域名，应该抽象出来 **/
 			$return = json_decode($return, true);
 			$domain_str = '';
-			foreach($return['fabuSuccessDomains'] as $v) {
-				$domain_str .= "\n" . $v[0];
+			foreach($return['msg']['succ'] as $k => $v) {
+                if ($v == 0) {
+                    $domain_str .= "\n" . $k;
+                }
 			}
-
 			if ($transType == 1 ) {
-				$this->log("域名上架，成功上架竞价域名列表: $domain_str");
+				$this->log("域名上架，成功上架一口价域名列表: $domain_str");
 			} else if ($transType == 4 ) {
-				$this->log("域名上架，成功上架一口价域名列表：$domain_str");
+				$this->log("域名上架，成功上架竞价域名列表：$domain_str");
 			}
 		}
-
 		return true;
 	}
 

@@ -5,14 +5,17 @@ class AuctionDetail extends EnameBase {
 	/**
 	 * 获取拍卖列表的url
 	 */
-	protected $url = "http://www.ename.com/auction/domain/";
+    protected $buynow_url = "http://auction.ename.com/domain/buynow/";
+    protected $bidding_url = "http://auction.ename.com/domain/auction/";
 
-	private $audit_list_id;
+	private $id = 0;
+
+    private $transtype = false;
 
 	/**
 	 * html源路径,用于指定html源文件的情况
 	 **/
-	private $source_file;
+	private $file;
 
 	private $html_tr; //html字符串
 	private $html;  // simple html dom 对象
@@ -22,19 +25,23 @@ class AuctionDetail extends EnameBase {
 	 * 可以传递一个AuditListId，这时候会去网络抓取html
 	 * 也可以传递一个文件的路径，这时候会去读取文件内容作为html
 	 * */
-	function __construct($audit_id_or_file, $proxy = '') 
-	{
-		parent::__construct();
-		$audit_id_or_file || exit('缺少拍卖id或者文件路径');
-		if (preg_match("/^[1-9]\d*$/", $audit_id_or_file)) {
-			$this->audit_list_id = $audit_id_or_file;
-		} else {
-			$this->source_file = $audit_id_or_file;
-		}
+	function __construct($info = []) 
+    {
+        parent::__construct();
+        if (isset($info['id'])) {
+            $this->id = $info['id'];
+            if (isset($info['transtype']) &&$info['transtype']) {
+                $this->transtype = $info['transtype'];
+            } else {
+                exit('缺少交易类型');
+            }
+            if (isset($info['proxy']) && $info['proxy']) {
+                $this->setProxy($info['proxy']);
+            }
+        } else if (isset($info['file']) && $info['file']) {
+            $this->file = $info['file'];
+        }
 
-		if ($proxy) {
-			$this->setProxy($proxy);
-		}
 		$this->setHtml();
 	}
 
@@ -49,11 +56,10 @@ class AuctionDetail extends EnameBase {
 	function setHtml()
 	{
 		$str = '';
-		if ($this->audit_list_id) {
-			$url = $this->url . $this->audit_list_id;
-			$str = $this->curlRequest($url);
-		} elseif ($this->source_file) {
-			$str = file_get_contents($this->source_file);
+		if ($this->id) {
+			$str = $this->curlRequest($this->getUrl());
+		} elseif ($this->file) {
+			$str = file_get_contents($this->file);
 		}
 		$this->html_str = $str;
 		$this->html = str_get_html($this->html_str);
@@ -77,10 +83,10 @@ class AuctionDetail extends EnameBase {
 
 		// 适用于竞价
 		if ($this->html->find("#leftTime", 0) &&
-			$this->html->find("#leftTime", 0)->innertext == "交易已结束") 
+			$this->html->find("#leftTime", 0)->innertext == "交易结束") 
 		{
 			return 1;
-		} else if ($this->getTransType() == 4) {
+		} else if ($this->getTransType() == self::TYPE_BUYNOW) {
 			//一口价暂时根据结束时间判断
 			$end_time = $this->getEndTime();
 			if ($end_time && strtotime($end_time) < time()) {
@@ -99,7 +105,7 @@ class AuctionDetail extends EnameBase {
 	{
 		$time_array = $this->getStartAndEndTime();
 		if ($time_array) {
-			return $time_array[0];
+			return trim($time_array[0]);
 		}
 		return false;
 	}
@@ -111,7 +117,7 @@ class AuctionDetail extends EnameBase {
 	{
 		$time_array = $this->getStartAndEndTime();
 		if ($time_array) {
-			return $time_array[1];
+			return trim($time_array[1]);
 		}
 		return false;
 	}
@@ -156,8 +162,17 @@ class AuctionDetail extends EnameBase {
 		$html = $this->html->find('#transCycle', 0);
 		if ($html) {
 			$time_str = trim($html->plaintext);
-			return explode(' - ', $time_str);
-		}  else {
+            if ($this->getTransType() == self::TYPE_BIDDING) {
+            //格式2015-12-29 16:26:43-2016-03-28 21:29:52
+                return explode(' - ', $time_str);
+            } else if($this->getTransType() == self::TYPE_BUYNOW) {
+            //格式 2016-03-04 19:01:15 - 2016-03-05 15:48:00
+                return [
+                    substr($time_str, 0, 19),
+                        substr($time_str, 20, 19),
+                    ];
+            }
+		} else {
 			return false;
 		}
 		return false;
@@ -169,28 +184,29 @@ class AuctionDetail extends EnameBase {
 	 ***/
 	public function getTransType()
 	{
-		$asking_html = $this->html->find('#askingPrice', 0);
-		if ($asking_html) {
-			$str = trim($asking_html->parent->prev_sibling()->plaintext);
-			if ($str == "一口价") {
-				return 4;
-			} elseif ($str == "起拍价") {
-				return 1;
-			}
-		}
-
-		return false;
-	}
-
-    public function getAuditListId() 
-    {
-        if (empty($this->audit_list_id)) {
-            $id_html = $this->html->find('input[name=id]', 0);
-            if ($id_html) {
-                $this->audit_list_id  = trim($id_html->value);
+        if ($this->transtype == false)  {
+            $asking_html = $this->html->find('#askingPrice', 0);
+            if ($asking_html) {
+                $str = trim($asking_html->parent->prev_sibling()->plaintext);
+                if ($str == "金额") {
+                    $this->transtype = self::TYPE_BUYNOW;
+                } elseif ($str == "起拍价") {
+                    $this->transtype = self::TYPE_BIDDING;
+                }
             }
         }
-        return $this->audit_list_id;
+        return $this->transtype;
+	}
+
+    public function getId() 
+    {
+        if ($this->id == 0) {
+            $html = $this->html->find('input[name=id]', 0);
+            if ($html) {
+                $this->id = $html->value;
+            }
+        }
+        return $this->id;
     }
 
     public function getDesc()
@@ -218,19 +234,27 @@ class AuctionDetail extends EnameBase {
 
     public function getSellerId()
     {
-        $shop_html = $this->html->find('.bid_shop h3 a', 0);
-        if ($shop_html) {
-            $href = $shop_html->href;
-            $domain = substr($href, 7);//去掉开头http://
-            return strstr($domain, '.', true); //第一个点出现前的部分
+        preg_match('/var shopUsreId=(\d{6,})/', $this->html_str, $matches);
+        if ($matches) {
+            return $matches[1];
         }
-
         return 0;// 没有开启店铺的情况，当前页无法获得id
+    }
+
+    function getUrl()
+    {
+        if ($this->transtype == self::TYPE_BIDDING) {
+            return $this->bidding_url . $this->id;
+        } else if ($this->transtype == self::TYPE_BUYNOW) {
+            return $this->buynow_url . $this->id;
+        }
     }
 
 	function __destruct()
 	{
-		$this->html->clear();
+        if ($this->html) {
+            $this->html->clear();
+        }
 		parent::__destruct();
 	}
 }

@@ -5,9 +5,10 @@ class AuctionList extends EnameBase {
 	/**
 	 * 获取拍卖列表的url
 	 */
-	protected $url = "http://auction.ename.com/auction/domainlist";
+	protected $basicUrl = "http://auction.ename.com/tao";
 
 	private $numPerPage = 30;// 固定30条
+    private $page = 1;
 
 	/**
 	 * 类别
@@ -72,7 +73,6 @@ class AuctionList extends EnameBase {
 	 ***/
 	protected $domaintlds   = []; 
 
-	private $ciCsrf = '';
 	private $total = 0;
 	private $paramsChanged = true;
 
@@ -107,6 +107,17 @@ class AuctionList extends EnameBase {
 		return $this;
 	}
 
+    public function getPage()
+    {
+        return $this->page;
+    }
+
+    public function setPage($page) 
+    {
+        $this->page = $page;
+        return $this;
+    }
+
 	public function getDomaintlds() 
 	{
 		return $this->domaintlds;
@@ -119,16 +130,27 @@ class AuctionList extends EnameBase {
 		return $this;
 	}
 
-	public function getCompleteUrl()
+    public function getUrl() 
+    {
+        if ($this->transtype == self::TYPE_BIDDING) {
+            return $this->basicUrl . '/bidding';
+        } else if ($this->transtype == self::TYPE_BUYNOW) {
+            return $this->basicUrl . '/buynow';
+        } else {
+            return $this->basicUrl;
+        }
+    }
+
+	public function getCompleteUrl($is_ajax = 0)
 	{
 		if ($this->getParams()) {
-			return $this->url . '?' . http_build_query($this->getParams());
+			return $this->getUrl() . '?' . http_build_query($this->getParams($is_ajax));
 		} else {
-			return $this->url;
+			return $this->getUrl();
 		}
 	}
 
-	public function getParams() 
+	public function getParams($is_ajax = 0) 
 	{
 		$params = [];
 		if ($this->domaingroup) {
@@ -141,6 +163,11 @@ class AuctionList extends EnameBase {
 			sort($this->domaintlds);
 			$params['domaintld'] = $this->domaintlds;
 		}
+
+        if ($is_ajax) {
+            $params['ajax']		  = 1;
+            $params['page']		  = $this->page;
+        }
 		ksort($params);
 		return $params;
 	}
@@ -156,7 +183,6 @@ class AuctionList extends EnameBase {
 		$number = $html->find('.page_hd .c_orange', 0)->plaintext;
 		$number = trim($number, ')( ');
 		$this->total = $number;
-		$this->ciCsrf = $html->find('input[name=ci_csrf_token]', 0)->value;
 		$this->paramsChanged = false;
 		return $this;
 	}
@@ -187,22 +213,48 @@ class AuctionList extends EnameBase {
 
 	public function getData($page = 1) 
 	{
+        $this->setPage($page);
 		$this->checkParamsChanged();
-		$params = $this->getParams();
-		$params['ci_csrf_token'] = $this->ciCsrf;
-		$params['ajax']		  = 1;
-		$params['page']		  = $page;
-		$params['per_page']	  = $page * $this->numPerPage;
-		$result = $this->curlRequest($this->url, $params);
+		$result = $this->curlRequest($this->getCompleteUrl(true));
 		return json_decode($result, true);
 	}
 
+    /***
+     返回规范化的数据，防止易名中国更改格式
+    */
 	public function getAuctions($page = 1) 
 	{
 		$data = $this->getData($page);
+        $result = [];
 		if ($data && isset($data['data']) && $data['data']) {
-			return $data['data'];
-		} 
-		return [];
+            $data = $data['data'];
+            foreach($data as $one) {
+                $result[] = [
+                    'transtype'     => $this->getTransType(),
+                    'trade_number'  => $this->getIdByUrl($one['t_url']),
+                    'description'   => $one['t_desc'],
+                    'domain_name'   => $one['t_dn'],
+                    'sell_id'       => $one['t_enameId'],
+                    'price'         => $one['t_now_price'],
+                    'bid_count'     => isset($one['t_count']) ? $one['t_count'] : 0,
+    //                'end_time'      => $one[''],
+                    ];
+            }
+
+            return $result;
+        }  else {
+            return [];
+        }
 	}
+
+    /***
+     * 一口价的ajax里有id，但是和url里的id不一致
+     * 竞价的id从url获取
+     * 现在统一获取url里的
+     */
+    public function getIdByUrl($url) {
+        $info = parse_url($url, PHP_URL_PATH);
+        $info = explode('/', $info);
+        return $info[3];
+    }
 }
