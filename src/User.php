@@ -81,7 +81,6 @@ class User extends EnameBase {
 			'http://www.ename.net/login', 
 			'http://auction.ename.com/login',
 			'http://top.ename.com/login',
-			'http://page.ename.com/login',
 		];
 		foreach($urls as $url) {
 			$return = $this->curlRequest($url);
