@@ -12,7 +12,7 @@
 		}
 	},
 	"repositories": [
-		{"type": "composer", "url": "http://pkg.phpcomposer.com/repo/packagist/"},
+        {"type": "composer", "url": "https://packagist.phpcomposer.com"},
 		{"packagist": false}
 	],
 	"minimum-stability": "stable"
