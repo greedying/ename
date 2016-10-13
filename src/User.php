@@ -109,12 +109,15 @@ class User extends EnameBase {
 	 * 除了域名信息外，主要就是ci_csrf_token
 	 * $transType 交易类型 0 全部 1一口价 4竞价
 	 */
-	protected function getPreTradeInfo($transType = 0) 
+	protected function getPreTradeInfo($transType = 0, $num = 200) 
 	{
 		$url = "http://auction.ename.com/publish/waitsale";
 		if ($transType) {
 			$url .= "?transType=$transType";
 		}
+        if ($num) {
+            $url .= '&pagesize=' . $num;
+        }
 		$return = $this->curlRequest($url);
 		$html = str_get_html($return);
 		if (strpos($return, "找不到相关记录") !== false) {
