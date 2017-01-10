@@ -206,15 +206,17 @@ class User extends EnameBase {
 			$data['opAnswer'] = $this->protectAnswer;
 			$data['opPassword'] = $this->password;
 			$data['type'] = $transType;
+            $data['is_lock'] = 1; //不设置60天内禁止转移注册商锁定
             
 			$secondUrl = "http://auction.ename.com/publish/second";
 			$return = $this->curlRequest($secondUrl, $data);
 
 			/**获取成功上架域名，应该抽象出来 **/
 			$return = json_decode($return, true);
+            //也按照没锁定来解析
 			$domain_str = '';
-			foreach($return['msg']['succ'] as $k => $v) {
-                if ($v == 0) {
+			foreach($return['msg']['unlock'] as $k => $v) {
+                if ($v == '') {
                     $domain_str .= "\n" . $k;
                 }
 			}
