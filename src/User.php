@@ -174,7 +174,7 @@ class User extends EnameBase {
 			/**
 			 * 第一步，编辑页面
 			 **/
-			$firstUrl = 'http://auction.ename.com/publish/first';
+			$firstUrl = 'https://auction.ename.com/publish/first';
 			$return = $this->curlRequest($firstUrl, $preTradeInfo, [CURLOPT_REFERER => "http://auction.ename.com/publish/waitsale"]);
 
 			/***
@@ -208,7 +208,7 @@ class User extends EnameBase {
 			$data['type'] = $transType;
             $data['is_lock'] = 1; //不设置60天内禁止转移注册商锁定
             
-			$secondUrl = "http://auction.ename.com/publish/second";
+			$secondUrl = "https://auction.ename.com/publish/second";
 			$return = $this->curlRequest($secondUrl, $data);
 
 			/**获取成功上架域名，应该抽象出来 **/
